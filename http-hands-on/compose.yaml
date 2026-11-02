@@ -1,0 +1,37 @@
+services:
+  legacy:
+    image: ghcr.io/mccutchen/go-httpbin:2.25.0
+    environment:
+      PORT: "8081"
+    expose:
+      - "8081"
+    networks:
+      - private
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+  proxy:
+    build: .
+    environment:
+      JWT_SECRET: ${JWT_SECRET:?Generate JWT_SECRET in the local .env file}
+      UPSTREAM_URL: http://legacy:8081
+    ports:
+      - "${BIND_IP:-127.0.0.1}:${PROXY_PORT:-80}:8080"
+    depends_on:
+      - legacy
+    networks:
+      - public
+      - private
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+networks:
+  public: {}
+  private:
+    internal: true
